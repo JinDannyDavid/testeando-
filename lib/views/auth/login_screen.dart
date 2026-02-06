@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_routes.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/utils/email_validator.dart';
 import '../../viewmodels/login_viewmodel.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,11 +16,45 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   late LoginViewModel _viewModel;
+  late AuthService _authService;
+  late EmailValidator _emailValidator;
 
   @override
   void initState() {
     super.initState();
     _viewModel = LoginViewModel();
+
+    // Verificar si ya hay un usuario autenticado al cargar la pantalla
+    if (_viewModel.isAlreadySignedIn) {
+      // Si ya está autenticado, intentar cargar el estudiante y navegar
+      _handleAlreadySignedIn();
+    }
+  }
+
+  Future<void> _handleAlreadySignedIn() async {
+    try {
+      // Llamar al método de signInWithGoogle para que maneje la lógica
+      final success = await _viewModel.signInWithGoogle();
+
+      if (success && mounted) {
+        // Verificar si ya votó
+        final alreadyVoted = await _viewModel.checkIfAlreadyVoted();
+
+        if (alreadyVoted) {
+          _showAlreadyVotedDialog();
+        } else {
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.candidates,
+            arguments: _viewModel.currentStudent,
+          );
+        }
+      }
+    } catch (e) {
+      print('Error al verificar estado de sesión: $e');
+      // Si hay error, cerrar sesión para seguridad
+      await _authService.signOut();
+    }
   }
 
   @override

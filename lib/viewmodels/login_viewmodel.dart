@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../core/services/auth_service.dart';
+import '../core/utils/email_validator.dart';
 import '../data/models/student_model.dart';
 import '../data/repositories/student_repository.dart';
 
@@ -20,17 +21,44 @@ class LoginViewModel extends ChangeNotifier {
   StudentModel? get currentStudent => _currentStudent;
   User? get firebaseUser => _firebaseUser;
 
+  /// Verifica si hay un usuario ya autenticado
+  bool get isAlreadySignedIn {
+    final user = _authService.currentUser;
+    return user != null &&
+        user.email != null &&
+        EmailValidator.isInstitutionalEmail(user.email!);
+  }
+
   /// Inicia sesión con Google
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     _clearError();
 
     try {
+      // Verificar si ya hay un usuario autenticado
+      if (isAlreadySignedIn) {
+        final email = _authService.currentUser!.email!;
+        final studentCode = EmailValidator.extractStudentCode(email);
+
+        // Obtener o crear estudiante en la base de datos
+        _currentStudent = await _studentRepository.getOrCreateStudent(
+          email,
+          studentCode,
+        );
+        _setLoading(false);
+        return true;
+      }
+
       // Iniciar sesión con Google
       final userCredential = await _authService.signInWithGoogle();
 
       if (userCredential == null) {
-        _setError('Inicio de sesión cancelado');
+        // Si devuelve null, puede ser que el usuario canceló o el email no es institucional
+        final currentUser = _authService.currentUser;
+        if (currentUser != null) {
+          await _authService.signOut();
+        }
+        _setError('Debes usar tu correo institucional @continental.edu.pe');
         _setLoading(false);
         return false;
       }
@@ -51,8 +79,8 @@ class LoginViewModel extends ChangeNotifier {
         return false;
       }
 
-      // Validar que sea email institucional
-      if (!_authService.isInstitutionalEmail(email)) {
+      // Validar que sea email institucional (seguridad adicional)
+      if (!EmailValidator.isInstitutionalEmail(email)) {
         await _authService.signOut();
         _setError('Debes usar tu correo institucional @continental.edu.pe');
         _setLoading(false);
@@ -60,7 +88,7 @@ class LoginViewModel extends ChangeNotifier {
       }
 
       // Extraer código de estudiante
-      final studentCode = _authService.getStudentCode(email);
+      final studentCode = EmailValidator.extractStudentCode(email);
 
       // Obtener o crear estudiante en la base de datos
       _currentStudent = await _studentRepository.getOrCreateStudent(
@@ -71,6 +99,7 @@ class LoginViewModel extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
+      // Manejar otros errores
       _setError('Error al iniciar sesión: ${e.toString()}');
       _setLoading(false);
       return false;

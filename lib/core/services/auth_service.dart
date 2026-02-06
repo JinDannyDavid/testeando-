@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import '../utils/email_validator.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -11,39 +11,46 @@ class AuthService {
   // Stream de cambios de autenticación
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  /// Iniciar sesión con Google
+  /// Iniciar sesión con Google usando Firebase Auth directamente
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Create a Google sign-in client with required configuration
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email'],
-        clientId: kIsWeb
-            ? '119403543251-im02o1281vpl821485immabfbuhslp33.apps.googleusercontent.com'
-            : null,
-      );
+      // Configurar Firebase Auth para Google Sign In
+      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      googleProvider.addScope('email');
+      googleProvider.setCustomParameters({
+        'hd': 'continental.edu.pe',
+      }); // Restringir a dominio institucional
 
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      // Iniciar sesión con Google
+      UserCredential userCredential;
 
-      if (googleUser == null) {
-        // El usuario canceló el inicio de sesión
+      if (kIsWeb) {
+        // Para web, usar popup
+        userCredential = await _auth.signInWithPopup(googleProvider);
+      } else {
+        // Para mobile/desktop, usar redirect
+        userCredential = await _auth.signInWithProvider(googleProvider);
+      }
+
+      // Validar email institucional
+      if (!EmailValidator.isInstitutionalEmail(
+        userCredential.user?.email ?? '',
+      )) {
+        await signOut();
         return null;
       }
 
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase with the Google credential
-      return await _auth.signInWithCredential(credential);
+      return userCredential;
     } catch (e) {
       print('Error en Google Sign In: $e');
+
+      // Manejar cualquier error
+      if (e.toString().contains('People API') ||
+          e.toString().contains('403') ||
+          e.toString().contains('PERMISSION_DENIED')) {
+        return null;
+      }
+
       rethrow;
     }
   }
@@ -51,8 +58,7 @@ class AuthService {
   /// Cerrar sesión
   Future<void> signOut() async {
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      await Future.wait([_auth.signOut(), googleSignIn.signOut()]);
+      await _auth.signOut();
     } catch (e) {
       print('Error al cerrar sesión: $e');
       rethrow;
@@ -61,11 +67,11 @@ class AuthService {
 
   /// Validar si el email es institucional
   bool isInstitutionalEmail(String email) {
-    return email.toLowerCase().endsWith('@continental.edu.pe');
+    return EmailValidator.isInstitutionalEmail(email);
   }
 
   /// Obtener código de estudiante del email
   String getStudentCode(String email) {
-    return email.split('@')[0];
+    return EmailValidator.extractStudentCode(email);
   }
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_routes.dart';
+import '../../core/services/auth_service.dart';
+import '../../viewmodels/splash_viewmodel.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,10 +18,14 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late SplashViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+
+    // Inicializar ViewModel
+    _viewModel = SplashViewModel();
 
     // Configurar animaciones
     _animationController = AnimationController(
@@ -43,11 +50,25 @@ class _SplashScreenState extends State<SplashScreen>
     // Iniciar animación
     _animationController.forward();
 
-    // Navegar al login después de 3 segundos
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
-      }
+    // Verificar estado de autenticación
+    _viewModel.checkAuthStatus().then((_) {
+      // Navegar después de la animación y verificación
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          final authService = AuthService();
+          if (authService.currentUser != null &&
+              authService.currentUser!.email != null &&
+              authService.isInstitutionalEmail(
+                authService.currentUser!.email!,
+              )) {
+            // Si hay un usuario autenticado con email institucional, ir directamente a la app
+            Navigator.pushReplacementNamed(context, AppRoutes.candidates);
+          } else {
+            // Si no hay usuario o email inválido, ir al login
+            Navigator.pushReplacementNamed(context, AppRoutes.login);
+          }
+        }
+      });
     });
   }
 
