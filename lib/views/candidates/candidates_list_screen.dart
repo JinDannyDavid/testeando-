@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/utils/location_helper.dart';
+import '../../data/models/student_model.dart';
 import '../../viewmodels/candidates_viewmodel.dart';
 import 'widgets/candidate_card.dart';
 
@@ -16,6 +17,17 @@ class CandidatesListScreen extends StatefulWidget {
 
 class _CandidatesListScreenState extends State<CandidatesListScreen> {
   late CandidatesViewModel _viewModel;
+  StudentModel? _currentStudent;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Obtener el estudiante desde los argumentos (se puede acceder aquí)
+    if (_currentStudent == null) {
+      _currentStudent =
+          ModalRoute.of(context)!.settings.arguments as StudentModel;
+    }
+  }
 
   @override
   void initState() {
@@ -58,7 +70,10 @@ class _CandidatesListScreenState extends State<CandidatesListScreen> {
     final result = await Navigator.pushNamed(
       context,
       AppRoutes.voteConfirmation,
-      arguments: _viewModel.selectedCandidate,
+      arguments: {
+        'candidate': _viewModel.selectedCandidate,
+        'student': _currentStudent,
+      },
     );
 
     // Si el voto fue exitoso, mostrar mensaje

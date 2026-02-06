@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_routes.dart';
 import '../../viewmodels/login_viewmodel.dart';
-import 'widgets/email_input_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +13,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   late LoginViewModel _viewModel;
 
   @override
@@ -29,17 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    // Validar formulario
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Ocultar teclado
-    FocusScope.of(context).unfocus();
-
-    // Intentar login
-    final success = await _viewModel.login();
+  Future<void> _handleGoogleSignIn() async {
+    // Intentar login con Google
+    final success = await _viewModel.signInWithGoogle();
 
     if (!mounted) return;
 
@@ -53,8 +43,12 @@ class _LoginScreenState extends State<LoginScreen> {
         // Mostrar mensaje y navegar a resultados
         _showAlreadyVotedDialog();
       } else {
-        // Navegar a la pantalla de candidatos
-        Navigator.pushReplacementNamed(context, AppRoutes.candidates);
+        // Navegar a la pantalla de candidatos y pasar el estudiante
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.candidates,
+          arguments: _viewModel.currentStudent,
+        );
       }
     } else {
       // Mostrar error
@@ -137,8 +131,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 48),
 
-                    // Formulario
-                    _buildLoginForm(),
+                    // Botón de Google Sign In
+                    _buildGoogleSignInButton(),
 
                     const SizedBox(height: 24),
 
@@ -193,18 +187,16 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
 
         // Subtítulo
-        Text(
-          AppStrings.loginSubtitle,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyLarge?.copyWith(color: Colors.white.withOpacity(0.9)),
+        const Text(
+          'Inicia sesión con tu cuenta de Google institucional',
+          style: TextStyle(fontSize: 16, color: Colors.white),
           textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _buildLoginForm() {
+  Widget _buildGoogleSignInButton() {
     return Consumer<LoginViewModel>(
       builder: (context, viewModel, child) {
         return Card(
@@ -214,45 +206,70 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Campo de email
-                  EmailInputField(
-                    controller: viewModel.emailController,
-                    validator: viewModel.validateEmail,
-                    enabled: !viewModel.isLoading,
-                    onEditingComplete: _handleLogin,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Texto explicativo
+                const Text(
+                  'Inicia sesión con:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
                   ),
+                  textAlign: TextAlign.center,
+                ),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                  // Botón de login
-                  SizedBox(
-                    height: 54,
-                    child: ElevatedButton(
-                      onPressed: viewModel.isLoading ? null : _handleLogin,
-                      child: viewModel.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
+                // Botón de Google Sign In
+                SizedBox(
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    onPressed: viewModel.isLoading ? null : _handleGoogleSignIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.textPrimary,
+                      elevation: 2,
+                      side: const BorderSide(
+                        color: AppColors.divider,
+                        width: 1,
+                      ),
+                    ),
+                    icon: viewModel.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
                               ),
-                            )
-                          : const Text(
-                              AppStrings.loginButton,
-                              style: TextStyle(fontSize: 16),
                             ),
+                          )
+                        : Image.network(
+                            'https://www.google.com/favicon.ico',
+                            height: 24,
+                            width: 24,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.g_mobiledata,
+                                size: 32,
+                                color: AppColors.primary,
+                              );
+                            },
+                          ),
+                    label: Text(
+                      viewModel.isLoading
+                          ? 'Iniciando sesión...'
+                          : 'Continuar con Google',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );

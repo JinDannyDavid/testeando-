@@ -4,7 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_routes.dart';
 import '../../data/models/candidate_model.dart';
-import '../../viewmodels/login_viewmodel.dart';
+import '../../data/models/student_model.dart';
 import '../../viewmodels/vote_viewmodel.dart';
 
 class VoteConfirmationScreen extends StatefulWidget {
@@ -16,13 +16,13 @@ class VoteConfirmationScreen extends StatefulWidget {
 
 class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
   late VoteViewModel _voteViewModel;
-  late LoginViewModel _loginViewModel;
+  late CandidateModel _candidate;
+  late StudentModel _student;
 
   @override
   void initState() {
     super.initState();
     _voteViewModel = VoteViewModel();
-    _loginViewModel = LoginViewModel();
   }
 
   @override
@@ -31,23 +31,16 @@ class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
     super.dispose();
   }
 
-  Future<void> _handleConfirmVote(CandidateModel candidate) async {
-    final student = _loginViewModel.currentStudent;
-
-    if (student == null) {
-      _showErrorSnackBar('Error: No se encontró información del estudiante');
-      return;
-    }
-
+  Future<void> _handleConfirmVote() async {
     // Confirmar con el usuario
-    final confirmed = await _showConfirmationDialog(candidate);
+    final confirmed = await _showConfirmationDialog(_candidate);
 
     if (!confirmed || !mounted) return;
 
     // Registrar el voto
     final success = await _voteViewModel.submitVote(
-      student: student,
-      candidate: candidate,
+      student: _student,
+      candidate: _candidate,
     );
 
     if (!mounted) return;
@@ -57,7 +50,7 @@ class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
       Navigator.pushReplacementNamed(
         context,
         AppRoutes.voteSuccess,
-        arguments: candidate,
+        arguments: _candidate,
       );
     } else {
       // Mostrar error
@@ -130,13 +123,14 @@ class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final candidate =
-        ModalRoute.of(context)!.settings.arguments as CandidateModel;
+    final Map<String, dynamic> arguments =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    _candidate = arguments['candidate'] as CandidateModel;
+    _student = arguments['student'] as StudentModel;
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<VoteViewModel>.value(value: _voteViewModel),
-        ChangeNotifierProvider<LoginViewModel>.value(value: _loginViewModel),
       ],
       child: Scaffold(
         appBar: AppBar(title: const Text('Confirmar voto')),
@@ -188,7 +182,7 @@ class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
                               CircleAvatar(
                                 radius: 60,
                                 backgroundImage: NetworkImage(
-                                  candidate.imageUrl,
+                                  _candidate.imageUrl,
                                 ),
                                 backgroundColor: AppColors.divider,
                               ),
@@ -197,7 +191,7 @@ class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
 
                               // Nombre
                               Text(
-                                candidate.name,
+                                _candidate.name,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineMedium
@@ -242,7 +236,7 @@ class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      candidate.proposal,
+                                      _candidate.proposal,
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium,
@@ -320,7 +314,7 @@ class _VoteConfirmationScreenState extends State<VoteConfirmationScreen> {
                           child: ElevatedButton.icon(
                             onPressed: viewModel.isSubmitting
                                 ? null
-                                : () => _handleConfirmVote(candidate),
+                                : () => _handleConfirmVote(),
                             icon: viewModel.isSubmitting
                                 ? const SizedBox(
                                     width: 20,

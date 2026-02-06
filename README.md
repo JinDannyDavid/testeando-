@@ -1,8 +1,1 @@
-<<<<<<< HEAD
-# testeando-
-asd
-=======
-# app_votar
-
-A new Flutter project.
->>>>>>> master
+"Aplicación móvil de votación desarrollada con Flutter"

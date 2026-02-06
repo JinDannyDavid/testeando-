@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "119403543251",
+    "project_id": "voto2-cf279",
+    "storage_bucket": "voto2-cf279.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119403543251:android:7210398c60178a41bef226",
+        "android_client_info": {
+          "package_name": "com.example.app_votar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJw5khuytVsUNSuk9TYlrUa9QcApJ-VRk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,53 +1,66 @@
 import 'package:flutter/material.dart';
-import '../core/utils/email_validator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../core/services/auth_service.dart';
 import '../data/models/student_model.dart';
 import '../data/repositories/student_repository.dart';
 
 class LoginViewModel extends ChangeNotifier {
+  final AuthService _authService = AuthService();
   final StudentRepository _studentRepository = StudentRepository();
 
   // Estado de la UI
   bool _isLoading = false;
   String? _errorMessage;
   StudentModel? _currentStudent;
+  User? _firebaseUser;
 
   // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   StudentModel? get currentStudent => _currentStudent;
+  User? get firebaseUser => _firebaseUser;
 
-  // Controlador de texto del email
-  final TextEditingController emailController = TextEditingController();
-
-  @override
-  void dispose() {
-    emailController.dispose();
-    super.dispose();
-  }
-
-  /// Valida el email ingresado
-  String? validateEmail(String? value) {
-    return EmailValidator.validate(value);
-  }
-
-  /// Inicia sesión con el email institucional
-  Future<bool> login() async {
+  /// Inicia sesión con Google
+  Future<bool> signInWithGoogle() async {
     _setLoading(true);
     _clearError();
 
     try {
-      final email = emailController.text.trim();
+      // Iniciar sesión con Google
+      final userCredential = await _authService.signInWithGoogle();
 
-      // Validar email
-      final validationError = EmailValidator.validate(email);
-      if (validationError != null) {
-        _setError(validationError);
+      if (userCredential == null) {
+        _setError('Inicio de sesión cancelado');
+        _setLoading(false);
+        return false;
+      }
+
+      _firebaseUser = userCredential.user;
+
+      if (_firebaseUser == null) {
+        _setError('Error al obtener información del usuario');
+        _setLoading(false);
+        return false;
+      }
+
+      final email = _firebaseUser!.email;
+
+      if (email == null) {
+        _setError('No se pudo obtener el email');
+        _setLoading(false);
+        return false;
+      }
+
+      // Validar que sea email institucional
+      if (!_authService.isInstitutionalEmail(email)) {
+        await _authService.signOut();
+        _setError('Debes usar tu correo institucional @continental.edu.pe');
         _setLoading(false);
         return false;
       }
 
       // Extraer código de estudiante
-      final studentCode = EmailValidator.extractStudentCode(email);
+      final studentCode = _authService.getStudentCode(email);
 
       // Obtener o crear estudiante en la base de datos
       _currentStudent = await _studentRepository.getOrCreateStudent(
@@ -58,7 +71,7 @@ class LoginViewModel extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _setError('Error al iniciar sesión. Intenta nuevamente.');
+      _setError('Error al iniciar sesión: ${e.toString()}');
       _setLoading(false);
       return false;
     }
@@ -73,6 +86,18 @@ class LoginViewModel extends ChangeNotifier {
     );
 
     return student?.hasVoted ?? false;
+  }
+
+  /// Cierra sesión
+  Future<void> signOut() async {
+    try {
+      await _authService.signOut();
+      _currentStudent = null;
+      _firebaseUser = null;
+      notifyListeners();
+    } catch (e) {
+      _setError('Error al cerrar sesión');
+    }
   }
 
   /// Limpia el error
@@ -90,13 +115,6 @@ class LoginViewModel extends ChangeNotifier {
   /// Establece el estado de carga
   void _setLoading(bool value) {
     _isLoading = value;
-    notifyListeners();
-  }
-
-  /// Limpia los datos del formulario
-  void clearForm() {
-    emailController.clear();
-    _clearError();
     notifyListeners();
   }
 }

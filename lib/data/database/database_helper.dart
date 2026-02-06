@@ -69,6 +69,39 @@ class DatabaseHelper {
 
     // Insertar candidatos iniciales
     await _insertInitialCandidates(db);
+
+    // Insertar estudiantes de prueba iniciales
+    await _insertInitialStudents(db);
+  }
+
+  Future<void> _insertInitialStudents(Database db) async {
+    final students = [
+      {
+        'email': '2021001@continental.edu.pe',
+        'student_code': '2021001',
+        'has_voted': 0,
+        'voted_at': null,
+        'voted_candidate_id': null,
+      },
+      {
+        'email': '2021002@continental.edu.pe',
+        'student_code': '2021002',
+        'has_voted': 0,
+        'voted_at': null,
+        'voted_candidate_id': null,
+      },
+      {
+        'email': '2021003@continental.edu.pe',
+        'student_code': '2021003',
+        'has_voted': 0,
+        'voted_at': null,
+        'voted_candidate_id': null,
+      },
+    ];
+
+    for (var student in students) {
+      await db.insert('students', student);
+    }
   }
 
   Future<void> _insertInitialCandidates(Database db) async {
