@@ -81,25 +81,11 @@ class _SplashScreenState extends State<SplashScreen>
                       opacity: _fadeAnimation,
                       child: ScaleTransition(
                         scale: _scaleAnimation,
-                        child: Container(
+                        child: Image.asset(
+                          'assets/images/logoUC.png',
                           width: 150,
                           height: 150,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.how_to_vote_rounded,
-                            size: 80,
-                            color: AppColors.primary,
-                          ),
+                          fit: BoxFit.contain,
                         ),
                       ),
                     );

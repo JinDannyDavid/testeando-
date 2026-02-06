@@ -152,25 +152,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         // Icono
-        Container(
+        Image.asset(
+          'assets/images/logoUC.png',
           width: 100,
           height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.how_to_vote_rounded,
-            size: 50,
-            color: AppColors.primary,
-          ),
+          fit: BoxFit.contain,
         ),
 
         const SizedBox(height: 24),
@@ -179,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           AppStrings.loginTitle,
           style: Theme.of(context).textTheme.displayMedium?.copyWith(
-            color: Colors.white,
+            color: const Color.fromARGB(255, 0, 0, 0),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -189,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Subtítulo
         const Text(
           'Inicia sesión con tu cuenta de Google institucional',
-          style: TextStyle(fontSize: 16, color: Colors.white),
+          style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 0, 0, 0)),
           textAlign: TextAlign.center,
         ),
       ],

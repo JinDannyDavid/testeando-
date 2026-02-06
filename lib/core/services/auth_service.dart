@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -14,7 +15,12 @@ class AuthService {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       // Create a Google sign-in client with required configuration
-      final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email'],
+        clientId: kIsWeb
+            ? '119403543251-im02o1281vpl821485immabfbuhslp33.apps.googleusercontent.com'
+            : null,
+      );
 
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();

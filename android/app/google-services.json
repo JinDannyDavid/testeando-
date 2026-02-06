@@ -12,7 +12,12 @@
           "package_name": "com.example.app_votar"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "119403543251-im02o1281vpl821485immabfbuhslp33.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAJw5khuytVsUNSuk9TYlrUa9QcApJ-VRk"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "119403543251-im02o1281vpl821485immabfbuhslp33.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "119403543251-jd9knk0k7q55647jdsif0j05amurl56u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appVotar"
+              }
+            }
+          ]
         }
       }
     }
